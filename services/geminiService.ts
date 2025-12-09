@@ -9,6 +9,35 @@ export class GeminiService {
     this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
+  async refinePrompt(currentPrompt: string): Promise<string> {
+    const prompt = `
+      You are an expert BuildShip Architect. The user has provided a rough idea for a low-code node or workflow.
+      
+      Rewrite their input to be highly detailed, technical, and specific.
+      - Specify inputs (types, required/optional).
+      - Specify outputs (structure).
+      - Mention error handling (timeouts, API failures).
+      - Suggest specific libraries or logic steps if applicable (e.g. using 'axios' for requests).
+      
+      Keep the tone direct and the format as a clear instruction paragraph or list that can be fed into a code generator.
+      
+      USER INPUT: "${currentPrompt}"
+      
+      Refined Prompt:
+    `;
+
+    try {
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+      });
+      return response.text.trim();
+    } catch (error) {
+      console.error("Refine Error", error);
+      throw new Error("Failed to refine prompt.");
+    }
+  }
+
   async generateBuildShipFiles(request: PromptRequest): Promise<{ files: GeneratedFile[], summary: string }> {
     const { userPrompt, context } = request;
 

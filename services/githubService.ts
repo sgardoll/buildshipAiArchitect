@@ -80,7 +80,17 @@ export class GitHubService {
     const repoData = await repoRes.json();
     const defaultBranch = repoData.default_branch || 'main';
 
-    const branchName = `ai-buildship-${Date.now()}`;
+    // Generate descriptive branch name from title
+    // e.g., "BuildShip AI: Create PDF Node..." -> "ai-buildship/create-pdf-node-123456"
+    const slug = title
+      .toLowerCase()
+      .replace(/^buildship ai:?\s*/, '') // Remove prefix
+      .replace(/[^a-z0-9]+/g, '-')      // Replace symbols with hyphen
+      .replace(/^-+|-+$/g, '')          // Trim hyphens
+      .slice(0, 50);                    // Truncate length
+
+    const timestamp = Date.now().toString().slice(-6);
+    const branchName = `ai-buildship/${slug || 'update'}-${timestamp}`;
 
     // 1. Get reference to default branch
     const refRes = await fetch(`${baseUrl}/git/ref/heads/${defaultBranch}`, { headers: this.headers });

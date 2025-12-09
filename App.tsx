@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Github, 
   Terminal, 
@@ -9,7 +9,9 @@ import {
   FileJson, 
   FileCode, 
   AlertCircle,
-  Play
+  Play,
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 import { AppStep, GeneratedFile, RepoInfo, BuildShipContext } from './types';
 import { GitHubService } from './services/githubService';
@@ -19,12 +21,15 @@ import { MOCK_PACKAGE_JSON, MOCK_FLOW_MAPPING } from './constants';
 const geminiService = new GeminiService();
 
 export default function App() {
+  // Initialize from localStorage if available
   const [step, setStep] = useState<AppStep>(AppStep.SETUP);
-  const [repoUrl, setRepoUrl] = useState('');
-  const [ghToken, setGhToken] = useState('');
+  const [repoUrl, setRepoUrl] = useState(() => localStorage.getItem('bs_repo_url') || '');
+  const [ghToken, setGhToken] = useState(() => localStorage.getItem('bs_gh_token') || '');
+  
   const [userPrompt, setUserPrompt] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
   
   const [repoInfo, setRepoInfo] = useState<RepoInfo | null>(null);
   const [generatedFiles, setGeneratedFiles] = useState<GeneratedFile[]>([]);
@@ -41,16 +46,16 @@ export default function App() {
       setError('Invalid GitHub URL. Format: https://github.com/owner/repo');
       return;
     }
-    if (!ghToken.startsWith('gh')) {
-        // Basic loose validation, real validation happens on fetch
-        // Warning only? No, let's try to fetch.
-    }
-
+    
     setIsLoading(true);
     const ghService = new GitHubService(ghToken);
     const hasAccess = await ghService.checkRepoAccess(info);
 
     if (hasAccess) {
+      // Save credentials on success
+      localStorage.setItem('bs_repo_url', repoUrl);
+      localStorage.setItem('bs_gh_token', ghToken);
+      
       setRepoInfo(info);
       setStep(AppStep.DASHBOARD);
     } else {
@@ -59,7 +64,31 @@ export default function App() {
     setIsLoading(false);
   };
 
-  // 2. Generate Code
+  const handleDisconnect = () => {
+    localStorage.removeItem('bs_repo_url');
+    localStorage.removeItem('bs_gh_token');
+    setRepoUrl('');
+    setGhToken('');
+    setRepoInfo(null);
+    setStep(AppStep.SETUP);
+  };
+
+  // 2. Refine Prompt
+  const handleRefine = async () => {
+    if (!userPrompt.trim()) return;
+    setIsRefining(true);
+    setError(null);
+    try {
+      const refined = await geminiService.refinePrompt(userPrompt);
+      setUserPrompt(refined);
+    } catch (e: any) {
+      setError('Failed to enhance prompt. Please try again.');
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
+  // 3. Generate Code
   const handleGenerate = async () => {
     if (!repoInfo || !userPrompt) return;
     setIsLoading(true);
@@ -67,11 +96,19 @@ export default function App() {
     setError(null);
 
     try {
-      // In a real app, we fetch these. For this demo, we might use mocks if fetch fails or for speed,
-      // but let's try to fetch real context if possible, fall back to mock constants for reliability.
       const ghService = new GitHubService(ghToken);
-      const pkgJson = await ghService.getFileContent(repoInfo, 'package.json') || MOCK_PACKAGE_JSON;
-      const flowMap = await ghService.getFileContent(repoInfo, 'flow-id-to-label.json') || MOCK_FLOW_MAPPING;
+      // Attempt to fetch real context, fallback to mocks
+      let pkgJson = MOCK_PACKAGE_JSON;
+      let flowMap = MOCK_FLOW_MAPPING;
+      
+      try {
+        const fetchedPkg = await ghService.getFileContent(repoInfo, 'package.json');
+        if (fetchedPkg) pkgJson = fetchedPkg;
+        const fetchedMap = await ghService.getFileContent(repoInfo, 'flow-id-to-label.json');
+        if (fetchedMap) flowMap = fetchedMap;
+      } catch (err) {
+        console.warn('Could not fetch context files, using defaults', err);
+      }
 
       const context: BuildShipContext = {
         packageJson: pkgJson,
@@ -97,7 +134,7 @@ export default function App() {
     }
   };
 
-  // 3. Create PR
+  // 4. Create PR
   const handleCreatePR = async () => {
     if (!repoInfo || generatedFiles.length === 0) return;
     setIsLoading(true);
@@ -142,9 +179,18 @@ export default function App() {
             <h1 className="font-bold text-xl tracking-tight">BuildShip <span className="text-brand-400">AI Architect</span></h1>
           </div>
           {repoInfo && (
-            <div className="text-sm text-slate-400 flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full">
-              <Github className="w-4 h-4" />
-              <span>{repoInfo.owner}/{repoInfo.name}</span>
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-slate-400 flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                <Github className="w-4 h-4" />
+                <span>{repoInfo.owner}/{repoInfo.name}</span>
+              </div>
+              <button 
+                onClick={handleDisconnect}
+                className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-full transition-colors"
+                title="Disconnect & Clear Credentials"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
@@ -187,7 +233,10 @@ export default function App() {
                   value={ghToken}
                   onChange={e => setGhToken(e.target.value)}
                 />
-                <p className="text-xs text-slate-500 mt-2">Token requires <code>repo</code> scope to create PRs.</p>
+                <p className="text-xs text-slate-500 mt-2 flex justify-between">
+                  <span>Token requires <code>repo</code> scope.</span>
+                  {localStorage.getItem('bs_gh_token') && <span className="text-green-400">Credentials saved</span>}
+                </p>
               </div>
 
               <button 
@@ -220,11 +269,20 @@ export default function App() {
                   value={userPrompt}
                   onChange={e => setUserPrompt(e.target.value)}
                 />
-                <div className="flex justify-end p-2 border-t border-slate-700/50">
+                <div className="flex justify-between items-center p-2 border-t border-slate-700/50 bg-slate-800/50 rounded-b-xl">
+                  <button
+                    onClick={handleRefine}
+                    disabled={!userPrompt.trim() || isRefining}
+                    className="text-brand-300 hover:text-white hover:bg-white/10 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isRefining ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    Enhance Prompt
+                  </button>
+
                   <button 
                     onClick={handleGenerate}
                     disabled={!userPrompt.trim()}
-                    className="bg-brand-600 hover:bg-brand-500 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                    className="bg-brand-600 hover:bg-brand-500 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-900/30"
                   >
                     Generate Plan <Play className="w-4 h-4 fill-current" />
                   </button>
