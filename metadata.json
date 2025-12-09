@@ -1,0 +1,5 @@
+{
+  "name": "BuildShip AI Architect",
+  "description": "AI-powered assistant to generate BuildShip nodes and workflows, automatically creating Pull Requests in your repository.",
+  "requestFramePermissions": []
+}
