@@ -50,8 +50,13 @@ export class GeminiService {
       Flow ID Mapping:
       ${context.flowIdMapping || 'Not found'}
 
-      Existing Nodes List (Use this to match naming convention):
-      ${context.existingNodes.length > 0 ? context.existingNodes.join(', ') : 'None found, default to kebab-case'}
+      Existing Nodes (CHECK THIS LIST):
+      ${context.existingNodes.length > 0 ? context.existingNodes.join(', ') : 'None found'}
+      
+      INSTRUCTION FOR EXISTING NODES:
+      If the user is asking to update or modify a node that appears in the list above, you MUST increment the version in the file path.
+      Example: If 'my-node' exists, generate files in 'nodes/my-node/1.0.1/' instead of '1.0.0'.
+      If it is a new node, use '1.0.0'.
     `;
 
     const prompt = `
@@ -82,7 +87,7 @@ export class GeminiService {
                     properties: {
                       path: { 
                         type: Type.STRING,
-                        description: "The relative file path, e.g., 'nodes/my-node/1.0.0/main.ts'"
+                        description: "The relative file path, e.g., 'nodes/my-node/1.0.1/main.ts'"
                       },
                       content: { 
                         type: Type.STRING, 
