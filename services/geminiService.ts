@@ -67,8 +67,8 @@ export class GeminiService {
       GENERATE FILES MATCHING THE SYSTEM INSTRUCTIONS.
       
       CRITICAL REQUIREMENTS CHECKLIST:
-      1. [ ] Did you create a 'flow-id-to-label/[UUID].txt' file for any new ID? (MANDATORY)
-      2. [ ] If creating a workflow embedded node, is it in 'workflows/[wf-name]/nodes/[node-id]/'?
+      1. [ ] Did you generate a RANDOM UUID for every NEW node/workflow ID? (NO PLAIN TEXT IDs ALLOWED)
+      2. [ ] Did you create a 'flow-id-to-label/[UUID].txt' file for each new ID?
       3. [ ] If updating a node, did you increment the version number?
       4. [ ] Did you strictly follow the 'Do Not Change' rules for inputs/outputs?
       
@@ -95,7 +95,7 @@ export class GeminiService {
                     properties: {
                       path: { 
                         type: Type.STRING,
-                        description: "The relative file path, e.g., 'nodes/my-node/1.0.1/main.ts' or 'flow-id-to-label/uuid.txt'"
+                        description: "The relative file path, e.g., 'nodes/[UUID]/1.0.1/main.ts' or 'flow-id-to-label/[UUID].txt'"
                       },
                       content: { 
                         type: Type.STRING, 
