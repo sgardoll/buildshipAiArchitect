@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from '@google/genai';
 import { PromptRequest, GeneratedFile } from '../types';
 import { SYSTEM_INSTRUCTION } from '../constants';
@@ -48,6 +49,9 @@ export class GeminiService {
 
       Flow ID Mapping:
       ${context.flowIdMapping || 'Not found'}
+
+      Existing Nodes (Use this to match naming convention like camelCase vs kebab-case):
+      ${context.existingNodes.length > 0 ? context.existingNodes.join(', ') : 'None found, default to kebab-case'}
     `;
 
     const prompt = `
@@ -55,7 +59,7 @@ export class GeminiService {
 
       ${contextString}
 
-      Generate the necessary files to fulfill this request adhering strictly to BuildShip architecture.
+      Generate the necessary files to fulfill this request adhering strictly to BuildShip architecture (index.ts + node.json).
     `;
 
     try {
@@ -75,7 +79,7 @@ export class GeminiService {
                     properties: {
                       path: { 
                         type: Type.STRING,
-                        description: "The relative file path, e.g., 'nodes/my-node/1.0.0/main.ts'"
+                        description: "The relative file path, e.g., 'nodes/my-node/1.0.0/index.ts'"
                       },
                       content: { 
                         type: Type.STRING, 

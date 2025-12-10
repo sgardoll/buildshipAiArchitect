@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Github, 
@@ -100,19 +101,24 @@ export default function App() {
       // Attempt to fetch real context, fallback to mocks
       let pkgJson = MOCK_PACKAGE_JSON;
       let flowMap = MOCK_FLOW_MAPPING;
+      let existingNodes: string[] = [];
       
       try {
         const fetchedPkg = await ghService.getFileContent(repoInfo, 'package.json');
         if (fetchedPkg) pkgJson = fetchedPkg;
         const fetchedMap = await ghService.getFileContent(repoInfo, 'flow-id-to-label.json');
         if (fetchedMap) flowMap = fetchedMap;
+        
+        // Fetch existing node structure to infer naming
+        existingNodes = await ghService.getExistingNodes(repoInfo);
       } catch (err) {
         console.warn('Could not fetch context files, using defaults', err);
       }
 
       const context: BuildShipContext = {
         packageJson: pkgJson,
-        flowIdMapping: flowMap
+        flowIdMapping: flowMap,
+        existingNodes
       };
 
       const result = await geminiService.generateBuildShipFiles({

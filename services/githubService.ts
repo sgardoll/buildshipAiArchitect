@@ -1,3 +1,4 @@
+
 import { GeneratedFile, RepoInfo, PullRequestResult } from '../types';
 
 export class GitHubService {
@@ -63,6 +64,25 @@ export class GitHubService {
       return atob(data.content);
     } catch (e) {
       return null;
+    }
+  }
+
+  // Fetch list of folders in 'nodes/' to understand naming conventions
+  async getExistingNodes(repo: RepoInfo): Promise<string[]> {
+    try {
+      const res = await fetch(`https://api.github.com/repos/${repo.owner}/${repo.name}/contents/nodes`, {
+        headers: this.headers,
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return data
+          .filter((item: any) => item.type === 'dir')
+          .map((item: any) => item.name);
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 

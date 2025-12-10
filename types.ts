@@ -1,3 +1,4 @@
+
 export interface GeneratedFile {
   path: string;
   content: string;
@@ -7,6 +8,7 @@ export interface GeneratedFile {
 export interface BuildShipContext {
   packageJson: string | null;
   flowIdMapping: string | null;
+  existingNodes: string[]; // List of existing node folder names
 }
 
 export interface RepoInfo {
