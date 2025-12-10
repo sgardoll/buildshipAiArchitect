@@ -13,11 +13,13 @@ You are a BuildShip AI Architect. You strictly follow repository structure and m
   - NEW Node: \`1.0.0\`.
   - EXISTING Node (found in context): Keep existing ID, Increment version (e.g. \`1.0.1\`).
 - **Required Files**: \`main.ts\`, \`inputs.json\`, \`output.json\`, \`meta.json\`, \`schema.json\`.
+- **Forbidden**: \`nodes/my-node-name/...\` (Strictly prohibited).
 
 #### B. WORKFLOWS
 **Target**: \`workflows/[UUID]/\`
 - **ID Generation**: You MUST generate a random UUID for any NEW workflow (e.g. \`987fcdeb-51a2-...\`). 
 - **Required Files**: \`nodes.json\`, \`triggers.json\`, \`inputs.json\`, \`output.json\`, \`meta.json\`, \`schema.json\`.
+- **Forbidden**: \`workflows/my-workflow-name/...\` (Strictly prohibited).
 
 #### C. EMBEDDED NODES (Inside Workflows)
 **Target**: \`workflows/[WORKFLOW_UUID]/nodes/[NODE_UUID]/\`
@@ -52,7 +54,10 @@ You are a BuildShip AI Architect. You strictly follow repository structure and m
 
 ### 3. GENERAL GUIDELINES
 - **Dependencies**: If you use a new npm package, generate the updated \`package.json\`.
-- **Kebab Case**: Use kebab-case for all directory names *except* the top-level ID folders which must be UUIDs.
+- **Naming**: 
+  - Directory IDs: **ALWAYS UUIDs**.
+  - Internal keys/variables: camelCase.
+  - File names: standard (main.ts, inputs.json).
 `;
 
 export const MOCK_PACKAGE_JSON = `{
@@ -80,6 +85,30 @@ export const SUGGESTED_PROMPTS = [
     type: "Node",
     description: "Generate a payment link for a specific amount.",
     prompt: "Create a node using the 'stripe' library to generate a payment link. Inputs: 'price' (number), 'currency' (string). Output: 'checkoutUrl'."
+  },
+  {
+    title: "Slack Notification",
+    type: "Node",
+    description: "Send a formatted message to a Slack channel via webhook.",
+    prompt: "Create a node that sends a message to a Slack channel using an Incoming Webhook URL. Inputs: 'webhookUrl', 'message', 'channel' (optional). Output: 'success' (boolean)."
+  },
+  {
+    title: "QR Code Generator",
+    type: "Node",
+    description: "Generate a QR code image from text or URL.",
+    prompt: "Create a node using 'qrcode' library. Input: 'data' (string). Output: 'qrCodeDataUrl' (string, base64)."
+  },
+  {
+    title: "Support Ticket AI Triager",
+    type: "Workflow",
+    description: "Analyze ticket sentiment and route to Department.",
+    prompt: "Create a workflow triggered by a new ticket webhook. Step 1: Use OpenAI to analyze sentiment and category. Step 2: Branch based on category (Sales vs Support). Step 3: Send Slack alert to appropriate channel."
+  },
+  {
+    title: "Notion Database Sync",
+    type: "Workflow",
+    description: "Sync new Typeform entries to Notion database.",
+    prompt: "Create a workflow triggered by Typeform webhook. Step 1: Transform data format. Step 2: Create page in Notion database using Notion API."
   },
   {
     title: "New User Onboarding",

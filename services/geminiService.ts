@@ -71,6 +71,7 @@ export class GeminiService {
       2. [ ] Did you create a 'flow-id-to-label/[UUID].txt' file for each new ID?
       3. [ ] If updating a node, did you increment the version number?
       4. [ ] Did you strictly follow the 'Do Not Change' rules for inputs/outputs?
+      5. [ ] Did you VERIFY all paths? 'nodes/my-node/...' is FORBIDDEN. 'nodes/[UUID]/...' is REQUIRED.
       
       Return the JSON response containing the file list and summary.
     `;
@@ -95,7 +96,7 @@ export class GeminiService {
                     properties: {
                       path: { 
                         type: Type.STRING,
-                        description: "The relative file path, e.g., 'nodes/[UUID]/1.0.1/main.ts' or 'flow-id-to-label/[UUID].txt'"
+                        description: "The relative file path. MUST use UUIDs for directories (e.g. 'nodes/550e8400.../1.0.0/main.ts'). NO kebab-case folders."
                       },
                       content: { 
                         type: Type.STRING, 
