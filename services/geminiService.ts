@@ -29,8 +29,13 @@ export class GeminiService {
 
     try {
       const response = await this.ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-pro-preview',
         contents: prompt,
+        config: {
+          thinkingConfig: {
+            thinkingBudget: 32768,
+          },
+        },
       });
       return response.text.trim();
     } catch (error) {
@@ -47,16 +52,11 @@ export class GeminiService {
       Package.json:
       ${context.packageJson || 'Not found (assume standard)'}
 
-      Flow ID Mapping:
-      ${context.flowIdMapping || 'Not found'}
-
-      Existing Nodes (CHECK THIS LIST):
+      Existing Nodes (For Versioning Checks):
       ${context.existingNodes.length > 0 ? context.existingNodes.join(', ') : 'None found'}
       
-      INSTRUCTION FOR EXISTING NODES:
-      If the user is asking to update or modify a node that appears in the list above, you MUST increment the version in the file path.
-      Example: If 'my-node' exists, generate files in 'nodes/my-node/1.0.1/' instead of '1.0.0'.
-      If it is a new node, use '1.0.0'.
+      INSTRUCTION FOR VERSIONING:
+      Check the list above. If the node name exists, you MUST increment the version in the generated path (e.g. 1.0.0 -> 1.0.1).
     `;
 
     const prompt = `
@@ -64,10 +64,15 @@ export class GeminiService {
 
       ${contextString}
 
-      Generate the necessary files to fulfill this request. 
-      You MUST strictly adhere to the multi-file structure (main.ts, inputs.json, meta.json, etc) defined in the system instructions.
-      Do NOT just generate index.ts. 
-      If dependencies are added, include the full updated package.json in the file list.
+      GENERATE FILES MATCHING THE SYSTEM INSTRUCTIONS.
+      
+      CRITICAL REQUIREMENTS CHECKLIST:
+      1. [ ] Did you create a 'flow-id-to-label/[UUID].txt' file for any new ID? (MANDATORY)
+      2. [ ] If creating a workflow embedded node, is it in 'workflows/[wf-name]/nodes/[node-id]/'?
+      3. [ ] If updating a node, did you increment the version number?
+      4. [ ] Did you strictly follow the 'Do Not Change' rules for inputs/outputs?
+      
+      Return the JSON response containing the file list and summary.
     `;
 
     try {
@@ -76,6 +81,9 @@ export class GeminiService {
         contents: prompt,
         config: {
             systemInstruction: SYSTEM_INSTRUCTION,
+            thinkingConfig: {
+              thinkingBudget: 32768,
+            },
             responseMimeType: 'application/json',
             responseSchema: {
               type: Type.OBJECT,
@@ -87,7 +95,7 @@ export class GeminiService {
                     properties: {
                       path: { 
                         type: Type.STRING,
-                        description: "The relative file path, e.g., 'nodes/my-node/1.0.1/main.ts'"
+                        description: "The relative file path, e.g., 'nodes/my-node/1.0.1/main.ts' or 'flow-id-to-label/uuid.txt'"
                       },
                       content: { 
                         type: Type.STRING, 
