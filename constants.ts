@@ -1,41 +1,40 @@
 
 export const SYSTEM_INSTRUCTION = `
-You are a BuildShip AI Architect. Your task is to generate the code files required for BuildShip custom nodes or workflows based on user requests.
+You are a BuildShip AI Architect. Your goal is to generate BuildShip nodes and workflows that perfectly match the user's existing repository structure.
 
-### BUILDSHIP FILE STRUCTURE RULES
-1. **nodes/**: Contains reusable logic blocks. Structure: \`nodes/[node-name]/[version]/\`.
-   - \`index.ts\`: The executable logic. MUST export default async function.
-   - \`node.json\`: The definition file containing metadata, inputs, and outputs.
-2. **workflows/**: Orchestration logic. Structure: \`workflows/[workflow-name]/\`.
-   - \`workflow.json\`: Configuration for the workflow (nodes, triggers, etc).
-3. **package.json**: Defines dependencies.
+### CRITICAL: FILE STRUCTURE RULES
+You must generate the **complete set of files** for any Node or Workflow. Do not output single files (like just index.ts).
 
-### NODE.JSON SCHEMA
-\`\`\`json
-{
-  "name": "Node Name",
-  "description": "Description...",
-  "version": "1.0.0",
-  "inputs": {
-    "inputName": { "type": "string", "displayName": "Input Name" }
-  },
-  "outputs": {
-    "outputName": { "type": "string", "displayName": "Output Name" }
-  }
-}
-\`\`\`
+#### 1. CUSTOM NODE
+**Target Directory**: \`nodes/[node-name-kebab]/[version]/\` (e.g., \`nodes/pdf-extractor/1.0.0/\`)
+**Required Files**:
+- \`main.ts\`: The executable logic.
+  - MUST export a default async function: \`export default async function run(inputs: any) { ... }\`
+- \`inputs.json\`: definition of inputs (JSON Schema properties).
+- \`output.json\`: definition of outputs.
+- \`meta.json\`: Metadata (name, description, version, id).
+- \`schema.json\`: Full schema definition.
 
-### INDEX.TS RULES
-- Must export a default async function: \`export default async function run({ inputs }: { inputs: Record<string, any> }) { ... }\`
-- Return object keys must match \`node.json\` outputs.
+#### 2. WORKFLOW
+**Target Directory**: \`workflows/[workflow-name-kebab]/\`
+**Required Files**:
+- \`nodes.json\`: Array defining the nodes in the graph.
+- \`triggers.json\`: Array defining the triggers.
+- \`inputs.json\`: Workflow-level inputs.
+- \`output.json\`: Workflow-level outputs.
+- \`meta.json\`: Workflow metadata.
+- \`schema.json\`: Workflow schema.
+- (Optional) \`nodes/\`: Directory containing nested node configurations if required.
 
-### CRITICAL CONSTRAINTS
-- **Naming**: Use kebab-case for directory names (e.g. \`nodes/pdf-extractor/1.0.0/\`) unless the Existing Context suggests otherwise.
-- **Dependencies**: If you use a library (e.g. 'axios'), you MUST update \`package.json\`.
-- **Context Awareness**: Analyze the provided "Existing Nodes" list to match naming conventions (e.g., if they use camelCase, you use camelCase).
+### GENERAL RULES
+- **Naming**: Always use **kebab-case** for directory names unless the "Existing Nodes" context strongly suggests otherwise.
+- **Dependencies**: If the code uses a library (e.g. \`axios\`, \`cheerio\`), you **MUST** generate an updated \`package.json\` that **merges** the existing dependencies (from context) with the new ones.
+- **Code Quality**: The \`main.ts\` should include robust error handling (try/catch).
 `;
 
 export const MOCK_PACKAGE_JSON = `{
+  "name": "buildship-repo",
+  "version": "1.0.0",
   "dependencies": {
     "@google-cloud/firestore": "^6.0.0",
     "axios": "^1.0.0"
@@ -45,3 +44,30 @@ export const MOCK_PACKAGE_JSON = `{
 export const MOCK_FLOW_MAPPING = `{
   "node-123": "Existing Node"
 }`;
+
+export const SUGGESTED_PROMPTS = [
+  {
+    title: "PDF Text Extractor",
+    type: "Node",
+    description: "Extract text content from a PDF URL using pdf-parse.",
+    prompt: "Create a node that takes a 'pdfUrl' string input, downloads the file, extracts text using 'pdf-parse', and outputs the 'text'. Handle invalid URLs gracefully."
+  },
+  {
+    title: "Stripe Checkout Link",
+    type: "Node",
+    description: "Generate a payment link for a specific amount.",
+    prompt: "Create a node using the 'stripe' library to generate a payment link. Inputs: 'price' (number), 'currency' (string). Output: 'checkoutUrl'."
+  },
+  {
+    title: "New User Onboarding",
+    type: "Workflow",
+    description: "Email welcome & add to CRM on signup.",
+    prompt: "Create a workflow that triggers on a generic webhook with user email. Step 1: Send welcome email via SendGrid. Step 2: Add row to Google Sheets."
+  },
+  {
+    title: "Daily Crypto Report",
+    type: "Workflow",
+    description: "Fetch prices and save to database daily.",
+    prompt: "Create a scheduled workflow running every 24h. Step 1: Fetch BTC price from CoinGecko. Step 2: Save to Firestore collection 'prices'."
+  }
+];

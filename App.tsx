@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Github, 
@@ -12,12 +11,13 @@ import {
   AlertCircle,
   Play,
   Sparkles,
-  LogOut
+  LogOut,
+  Zap
 } from 'lucide-react';
 import { AppStep, GeneratedFile, RepoInfo, BuildShipContext } from './types';
 import { GitHubService } from './services/githubService';
 import { GeminiService } from './services/geminiService';
-import { MOCK_PACKAGE_JSON, MOCK_FLOW_MAPPING } from './constants';
+import { MOCK_PACKAGE_JSON, MOCK_FLOW_MAPPING, SUGGESTED_PROMPTS } from './constants';
 
 const geminiService = new GeminiService();
 
@@ -296,18 +296,34 @@ export default function App() {
               </div>
             </div>
 
-            {/* Quick Tips */}
-            <div className="max-w-3xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                { title: "Custom Nodes", desc: "Logic blocks with Typescript" },
-                { title: "Workflows", desc: "Orchestrate nodes via JSON" },
-                { title: "Safe Updates", desc: "Preserves existing IO keys" }
-              ].map((tip, i) => (
-                <div key={i} className="bg-slate-800/30 border border-slate-800 p-5 rounded-xl">
-                  <h3 className="font-semibold text-brand-300 mb-1">{tip.title}</h3>
-                  <p className="text-sm text-slate-500">{tip.desc}</p>
-                </div>
-              ))}
+            {/* Suggested Prompts */}
+            <div className="max-w-4xl mx-auto mt-12">
+               <h3 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                 <Zap className="w-4 h-4 text-brand-400" />
+                 Try an Example
+               </h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {SUGGESTED_PROMPTS.map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setUserPrompt(item.prompt)}
+                    className="group bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-brand-500/50 p-4 rounded-xl text-left transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                        item.type === 'Node' 
+                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
+                          : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                      }`}>
+                        {item.type}
+                      </span>
+                      <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-brand-400 transition-colors" />
+                    </div>
+                    <h4 className="font-semibold text-slate-200 mb-1">{item.title}</h4>
+                    <p className="text-sm text-slate-400 line-clamp-2">{item.description}</p>
+                  </button>
+                ))}
+               </div>
             </div>
           </div>
         )}

@@ -50,7 +50,7 @@ export class GeminiService {
       Flow ID Mapping:
       ${context.flowIdMapping || 'Not found'}
 
-      Existing Nodes (Use this to match naming convention like camelCase vs kebab-case):
+      Existing Nodes List (Use this to match naming convention):
       ${context.existingNodes.length > 0 ? context.existingNodes.join(', ') : 'None found, default to kebab-case'}
     `;
 
@@ -59,7 +59,10 @@ export class GeminiService {
 
       ${contextString}
 
-      Generate the necessary files to fulfill this request adhering strictly to BuildShip architecture (index.ts + node.json).
+      Generate the necessary files to fulfill this request. 
+      You MUST strictly adhere to the multi-file structure (main.ts, inputs.json, meta.json, etc) defined in the system instructions.
+      Do NOT just generate index.ts. 
+      If dependencies are added, include the full updated package.json in the file list.
     `;
 
     try {
@@ -79,7 +82,7 @@ export class GeminiService {
                     properties: {
                       path: { 
                         type: Type.STRING,
-                        description: "The relative file path, e.g., 'nodes/my-node/1.0.0/index.ts'"
+                        description: "The relative file path, e.g., 'nodes/my-node/1.0.0/main.ts'"
                       },
                       content: { 
                         type: Type.STRING, 
